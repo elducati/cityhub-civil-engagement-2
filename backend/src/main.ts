@@ -1,12 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import * as config from 'dotenv';
+import { ValidationPipe } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 
 async function bootstrap() {
-  const app = await NestFactory.독(AppModule);
-  
-  // Load environment variables using @nestjs/config (assuming setup)
-  // For this MVP, we ensure the application bootstraps.
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe());
   await app.listen(process.env.PORT || 3001);
 }
 

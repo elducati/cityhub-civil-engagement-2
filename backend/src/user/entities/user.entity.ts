@@ -1,23 +1,30 @@
-# --- Stage 1: Base Image ---
-FROM node:20-alpine AS base
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Vote } from '../../vote/entities/vote.entity';
 
-# --- Stage 2: Development Image (For local testing) ---
-FROM base AS development
-ENV NODE_ENV=development
-EXPOSE 3000
-VOLUME /app
+export enum UserRole {
+  USER = 'USER',
+  MODERATOR = 'MODERATOR',
+  ADMIN = 'ADMIN',
+}
 
-COPY . .
-CMD ["npm", "run", "dev"]
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-# --- Stage 3: Production Image (Static Assets) ---
-FROM node:20-alpine AS production
-WORKDIR /app
-# Install necessary tools for serving static files if needed, otherwise use a minimal base
-RUN apk add --no-cache nginx
+  @Column({ unique: true })
+  email: string;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role: UserRole;
+
+  @OneToMany(() => Vote, (vote) => vote.voter)
+  votes: Vote[];
+}
 COPY --from=build /app/public ./public
 COPY --from=build /app/.next ./.next
 COPY --from=base /app/node_modules ./node_modules

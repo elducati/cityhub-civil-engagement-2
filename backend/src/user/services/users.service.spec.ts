@@ -1,23 +1,33 @@
-import { Test, Testing } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
-import { User } from '../entities/user.entity';
-
-// Mock the repository for testing isolation
-const mockUserRepository = { 
-  create: jest.fn(),
-  findOne: jest.fn(),
-  save: jest.fn() 
-};
 
 describe('UsersService', () => {
   let service: UsersService;
-  let userRepository: Repository<User>;
 
-  beforeAll(async () => {
-    // Setup mock repository interaction (In a real setup, we'd use TestModule with actual DB setup)
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UsersService,
+        {
+          provide: getRepositoryToken(User),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+            findOne: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<UsersService>(UsersService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
     userRepository = mockUserRepository as unknown as Repository<User>;
     service = new UsersService(userRepository as any); // Injecting the mock for test context
   });
