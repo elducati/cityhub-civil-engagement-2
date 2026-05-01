@@ -1,16 +1,5 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersService } from './users.service';
-import { UsersController } from './users.controller';
-import { User } from '../entities/user.entity'; // Will be defined later
-import { AuthService } from '../auth/auth.service'; // Placeholder dependency
+version: '3.8'
 
-@Module({
-  imports: [TypeOrmModule.forFeature([User])],
-  controllers: [UsersController],
-  providers: [UsersService, AuthService],
-})
-export class UsersModule {}version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
@@ -24,18 +13,21 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 10s
       retries: 5
+
   redis:
     image: redis:7-alpine
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       retries: 5
+
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 15s
       retries: 5
+
   api:
     build:
       context: ./backend
@@ -44,11 +36,15 @@ services:
       - ./backend:/app
     env_file: .env
     depends_on:
-      postgres: { condition: service_healthy }
-      redis:    { condition: service_healthy }
-      rabbitmq: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "3001:3001"
+
   web:
     build:
       context: ./frontend
@@ -60,5 +56,6 @@ services:
       - api
     ports:
       - "3000:3000"
+
 volumes:
   postgres_data:

@@ -2,7 +2,7 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install || npm install --legacy-peer-deps
 
 # --- Stage 2: Development Image ---
 FROM base AS development

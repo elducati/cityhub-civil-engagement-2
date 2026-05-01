@@ -1,22 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { User } from '../entities/user.entity';
+import { User, UserRole } from '../entities/user.entity';
 
 describe('UsersService', () => {
   let service: UsersService;
+  let mockRepository: any;
 
   beforeEach(async () => {
+    mockRepository = {
+      create: jest.fn(),
+      save: jest.fn(),
+      findOne: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         {
           provide: getRepositoryToken(User),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-            findOne: jest.fn(),
-          },
+          useValue: mockRepository,
         },
       ],
     }).compile();
@@ -27,7 +30,63 @@ describe('UsersService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+
+  describe('create', () => {
+    it('should create a new user', async () => {
+      const createUserDto = {
+        email: 'test@example.com',
+        role: UserRole.USER,
+        password: 'password123',
+      };
+
+      const createdUser = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        ...createUserDto,
+      };
+
+      mockRepository.create.mockReturnValue(createdUser);
+      mockRepository.save.mockResolvedValue(createdUser);
+
+      const result = await service.create(createUserDto);
+
+      expect(mockRepository.create).toHaveBeenCalledWith({
+        email: createUserDto.email,
+        role: createUserDto.role,
+      });
+      expect(mockRepository.save).toHaveBeenCalledWith(createdUser);
+      expect(result).toEqual(createdUser);
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a user by id', async () => {
+      const userId = '123e4567-e89b-12d3-a456-426614174000';
+      const user = {
+        id: userId,
+        email: 'test@example.com',
+        role: UserRole.USER,
+      };
+
+      mockRepository.findOne.mockResolvedValue(user);
+
+      const result = await service.findOne(userId);
+
+      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(result).toEqual(user);
+    });
+
+    it('should return null if user not found', async () => {
+      const userId = 'nonexistent-id';
+
+      mockRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.findOne(userId);
+
+      expect(result).toBeNull();
+    });
+  });
 });
+
     userRepository = mockUserRepository as unknown as Repository<User>;
     service = new UsersService(userRepository as any); // Injecting the mock for test context
   });
